@@ -54,7 +54,7 @@ load_custom_font(roboto_light, "Roboto Light")
 # Definir as fontes após o carregamento
 emoji_font = ("Arial", 20)  # Mantendo Arial para emojis
 small_font = ("Roboto Light", 10)  # Para textos pequenos como os da barra lateral
-title_font = ("Roboto Bold", 24)   # Para títulos
+title_font = ("Roboto Bold", 20)   # Para títulos
 text_font = ("Roboto", 14)         # Para texto geral
 
 # --- FRAME LATERAL ---
@@ -258,21 +258,50 @@ frame_about = ctk.CTkFrame(container, fg_color="#000000")
 about_wrapper = ctk.CTkFrame(frame_about, fg_color="#000000")
 about_wrapper.pack(expand=True)
 
-about_title = ctk.CTkLabel(about_wrapper, text="Sobre", font=title_font, text_color="white")
-about_title.pack(pady=(20, 10))
+# Título e imagem das aplicações suportadas
+supported_title = ctk.CTkLabel(about_wrapper, 
+                             text="Aplicações suportadas", 
+                             font=title_font,  # Voltando para o tamanho maior
+                             text_color="white")
+supported_title.pack(pady=(10, 0))
 
+# Carregar e redimensionar a imagem de plataformas suportadas
+supported_original = Image.open(os.path.join(images_dir, "supported.png"))
+original_width, original_height = supported_original.size
+desired_width = 500  # Ajuste este valor conforme necessário
+scale_ratio = desired_width / original_width
+new_height = int(original_height * scale_ratio)
+
+supported_image = ctk.CTkImage(
+    light_image=supported_original,
+    dark_image=supported_original,
+    size=(desired_width, new_height)
+)
+
+supported_label = ctk.CTkLabel(about_wrapper, image=supported_image, text="")
+supported_label.pack(pady=(5, 30))
+
+# Texto sobre o desenvolvimento
 about_description = ("Estou desenvolvendo essa aplicação para aprender mais sobre Python e ajudar pessoas "
               "que necessitam de um aplicativo para baixar músicas ou vídeos, sem a inconveniência de "
-              "múltiplos pop-ups.\n\n"
-              "Opções de download: MP3 (audio) e MP4 (video)\n"
-              "Aplicações suportadas: YouTube, Twitter, Twitch, Facebook\n\n"
-              "A funcionalidade de salvamento simplifica o download de conteúdo da internet e não assume "
-              "responsabilidade sobre o uso do conteúdo salvo.")
+              "múltiplos pop-ups.")
 
 about_label = ctk.CTkLabel(about_wrapper, text=about_description, font=text_font, text_color="white", justify="left", wraplength=600)
 about_label.pack(padx=20, pady=10)
 
-# Calcular dimensões proporcionais para a logo do GitHub
+# Texto de disclaimer em negrito
+disclaimer_text = ("A funcionalidade de salvamento simplifica o download de conteúdo da internet e não assume "
+                  "responsabilidade sobre o uso do conteúdo salvo.")
+
+disclaimer_label = ctk.CTkLabel(about_wrapper, 
+                              text=disclaimer_text, 
+                              font=("Roboto Bold", 14),  # Mantendo tamanho normal com negrito
+                              text_color="white", 
+                              justify="left", 
+                              wraplength=600)
+disclaimer_label.pack(padx=20, pady=10)
+
+# Logo do GitHub
 github_original = Image.open(os.path.join(images_dir, "github.png"))
 original_width, original_height = github_original.size
 desired_width = 200  # Largura desejada
