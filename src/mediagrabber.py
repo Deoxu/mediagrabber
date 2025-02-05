@@ -186,40 +186,27 @@ main_logo_label.pack(pady=20)
 
 # Campo de entrada
 link_entry = ctk.CTkEntry(wrapper, 
-                         placeholder_text="paste the link here", 
+                         placeholder_text="cole o link aqui", 
                          width=400, 
                          fg_color="#000000",
                          text_color="white",
-                         border_color="#FFFFFF",
+                         border_color="#333333",
                          placeholder_text_color="gray",
                          corner_radius=10)
 link_entry.pack(pady=10)
 
-# Frame dos botões de opção
-format_frame = ctk.CTkFrame(wrapper, fg_color="#000000")
-format_frame.pack(pady=10)
+# Carregar e redimensionar os ícones dos botões
+icon_size = (20, 20)  # Tamanho desejado para os ícones
 
-audio_button = ctk.CTkButton(format_frame, text="Audio", width=80, fg_color="#333", hover_color="#555")
-video_button = ctk.CTkButton(format_frame, text="Video", width=80, fg_color="#333", hover_color="#555")
-info_button  = ctk.CTkButton(format_frame, text="Info", width=80, fg_color="#333", hover_color="#555")
-
-audio_button.grid(row=0, column=2, padx=5)
-video_button.grid(row=0, column=1, padx=5)
-info_button.grid(row=0, column=0, padx=5)
-
-# Ajustar tamanho dos ícones para 25x25 pixels
-icon_size = (25, 25)
-
-# Carregar ícones (versões escuras e claras)
-download_icon = ctk.CTkImage(
-    light_image=Image.open(os.path.join(images_dir, "download.png")),
-    dark_image=Image.open(os.path.join(images_dir, "download.png")),
+audio_icon = ctk.CTkImage(
+    light_image=Image.open(os.path.join(images_dir, "audio.png")),
+    dark_image=Image.open(os.path.join(images_dir, "audio.png")),
     size=icon_size
 )
 
-download_icon_white = ctk.CTkImage(
-    light_image=Image.open(os.path.join(images_dir, "download.png")).convert("L"),
-    dark_image=Image.open(os.path.join(images_dir, "download.png")).convert("L"),
+video_icon = ctk.CTkImage(
+    light_image=Image.open(os.path.join(images_dir, "video.png")),
+    dark_image=Image.open(os.path.join(images_dir, "video.png")),
     size=icon_size
 )
 
@@ -229,23 +216,40 @@ info_icon = ctk.CTkImage(
     size=icon_size
 )
 
-info_icon_white = ctk.CTkImage(
-    light_image=Image.open(os.path.join(images_dir, "info.png")).convert("L"),
-    dark_image=Image.open(os.path.join(images_dir, "info.png")).convert("L"),
-    size=icon_size
-)
+# Frame dos botões de opção
+format_frame = ctk.CTkFrame(wrapper, fg_color="#000000")
+format_frame.pack(pady=10)
 
-settings_icon = ctk.CTkImage(
-    light_image=Image.open(os.path.join(images_dir, "settings.png")),
-    dark_image=Image.open(os.path.join(images_dir, "settings.png")),
-    size=icon_size
-)
+audio_button = ctk.CTkButton(format_frame, 
+                           text="audio", 
+                           width=80, 
+                           fg_color="#333", 
+                           hover_color="#555",
+                           font=("Roboto Bold", 14),
+                           image=audio_icon,
+                           compound="left")
 
-settings_icon_white = ctk.CTkImage(
-    light_image=Image.open(os.path.join(images_dir, "settings.png")).convert("L"),
-    dark_image=Image.open(os.path.join(images_dir, "settings.png")).convert("L"),
-    size=icon_size
-)
+video_button = ctk.CTkButton(format_frame, 
+                           text="video", 
+                           width=80, 
+                           fg_color="#333", 
+                           hover_color="#555",
+                           font=("Roboto Bold", 14),
+                           image=video_icon,
+                           compound="left")
+
+info_button = ctk.CTkButton(format_frame, 
+                          text="info", 
+                          width=80, 
+                          fg_color="#333", 
+                          hover_color="#555",
+                          font=("Roboto Bold", 14),
+                          image=info_icon,
+                          compound="left")
+
+audio_button.grid(row=0, column=2, padx=5)
+video_button.grid(row=0, column=1, padx=5)
+info_button.grid(row=0, column=0, padx=5)
 
 # --- TELA "ABOUT" ---
 frame_about = ctk.CTkFrame(container, fg_color="#000000")
