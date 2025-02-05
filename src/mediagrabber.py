@@ -8,6 +8,9 @@ import os
 current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 images_dir = os.path.join(current_dir, "images")
 
+# Definir o caminho para as fontes de forma mais explícita
+fonts_dir = os.path.join(current_dir, "fonts")
+
 # Configurações da interface
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
@@ -24,9 +27,35 @@ DEFAULT_FG = "#333"
 ACTIVE_FG = "white"
 DEFAULT_HOVER = "#555"
 
-# Criar fontes para emoji e texto
-emoji_font = ("Arial", 20)  # Fonte maior para emojis
-small_font = ("Arial", 10)  # Fonte menor para o texto
+# Criar fontes personalizadas com caminhos absolutos
+roboto_regular = os.path.join(fonts_dir, "Roboto-Regular.ttf")
+roboto_bold = os.path.join(fonts_dir, "Roboto-Bold.ttf")
+roboto_light = os.path.join(fonts_dir, "Roboto-Light.ttf")
+
+# Registrar as fontes no sistema
+from tkinter import font
+import tkinter as tk
+
+def load_custom_font(font_path, family_name):
+    try:
+        tk.font.families()  # Inicializa o sistema de fontes
+        custom_font = tk.font.Font(font=font_path)
+        print(f"Fonte carregada: {font_path}")
+        return True
+    except Exception as e:
+        print(f"Erro ao carregar fonte {font_path}: {e}")
+        return False
+
+# Tentar carregar cada fonte
+load_custom_font(roboto_regular, "Roboto")
+load_custom_font(roboto_bold, "Roboto Bold")
+load_custom_font(roboto_light, "Roboto Light")
+
+# Definir as fontes após o carregamento
+emoji_font = ("Arial", 20)  # Mantendo Arial para emojis
+small_font = ("Roboto Light", 10)  # Para textos pequenos como os da barra lateral
+title_font = ("Roboto Bold", 24)   # Para títulos
+text_font = ("Roboto", 14)         # Para texto geral
 
 # --- FRAME LATERAL ---
 side_frame = ctk.CTkFrame(app, width=100, height=500, fg_color="#101010")
@@ -137,19 +166,33 @@ frame_download = ctk.CTkFrame(container, fg_color="#000000")
 wrapper = ctk.CTkFrame(frame_download, fg_color="#000000")
 wrapper.pack(expand=True)
 
-# Ícone centralizado
-icon_label = ctk.CTkLabel(wrapper, text="🎥", font=("Arial", 50), text_color="white")
-icon_label.pack(pady=10)
+# Carregar e redimensionar a logo principal
+main_logo_original = Image.open(os.path.join(images_dir, "biglogo.png"))
+original_width, original_height = main_logo_original.size
+desired_width = 345  # Aumentado em 15% (300 * 1.15)
+scale_ratio = desired_width / original_width
+new_height = int(original_height * scale_ratio)
+
+# Criar a imagem para a logo principal
+main_logo = ctk.CTkImage(
+    light_image=main_logo_original,
+    dark_image=main_logo_original,
+    size=(desired_width, new_height)
+)
+
+# Substituir o emoji pela logo
+main_logo_label = ctk.CTkLabel(wrapper, image=main_logo, text="")
+main_logo_label.pack(pady=20)
 
 # Campo de entrada
 link_entry = ctk.CTkEntry(wrapper, 
                          placeholder_text="paste the link here", 
                          width=400, 
-                         fg_color="#000000",  # Cor de fundo preta
-                         text_color="white",   # Cor do texto em branco
-                         border_color="#FFFFFF", # Borda branca
-                         placeholder_text_color="gray", # Cor do texto placeholder em cinza
-                         corner_radius=10)  # Bordas arredondadas
+                         fg_color="#000000",
+                         text_color="white",
+                         border_color="#FFFFFF",
+                         placeholder_text_color="gray",
+                         corner_radius=10)
 link_entry.pack(pady=10)
 
 # Frame dos botões de opção
@@ -206,46 +249,51 @@ settings_icon_white = ctk.CTkImage(
 
 # --- TELA "ABOUT" ---
 frame_about = ctk.CTkFrame(container, fg_color="#000000")
-about_title = ctk.CTkLabel(frame_about, text="Sobre", font=("Arial", 24, "bold"), text_color="white")
+
+# Wrapper centralizado para About
+about_wrapper = ctk.CTkFrame(frame_about, fg_color="#000000")
+about_wrapper.pack(expand=True)
+
+about_title = ctk.CTkLabel(about_wrapper, text="Sobre", font=title_font, text_color="white")
 about_title.pack(pady=(20, 10))
 
 about_description = ("Estou desenvolvendo essa aplicação para aprender mais sobre Python e ajudar pessoas "
               "que necessitam de um aplicativo para baixar músicas ou vídeos, sem a inconveniência de "
               "múltiplos pop-ups.\n\n"
               "Opções de download: MP3 (audio) e MP4 (video)\n"
-              "Aplicações suportadas: YouTube, Twitter, Twitch, Facebook")
+              "Aplicações suportadas: YouTube, Twitter, Twitch, Facebook\n\n"
+              "A funcionalidade de salvamento simplifica o download de conteúdo da internet e não assume "
+              "responsabilidade sobre o uso do conteúdo salvo.")
 
-about_label = ctk.CTkLabel(frame_about, text=about_description, font=("Arial", 14), text_color="white", justify="left", wraplength=600)
+about_label = ctk.CTkLabel(about_wrapper, text=about_description, font=text_font, text_color="white", justify="left", wraplength=600)
 about_label.pack(padx=20, pady=10)
 
-# Link GitHub
+# Calcular dimensões proporcionais para a logo do GitHub
+github_original = Image.open(os.path.join(images_dir, "github.png"))
+original_width, original_height = github_original.size
+desired_width = 200  # Largura desejada
+scale_ratio = desired_width / original_width
+new_height = int(original_height * scale_ratio)
+
+# Função para lidar com o clique no link do GitHub
 def open_github_link(event):
     webbrowser.open("https://github.com/Deoxu")
 
-github_label = ctk.CTkLabel(frame_about, text="GitHub: https://github.com/Deoxu", font=("Arial", 14, "underline"), text_color="#4e9af1", cursor="hand2")
-github_label.pack(pady=(10, 20))
-github_label.bind("<Button-1>", open_github_link)
+# Criar e configurar a imagem do GitHub
+github_image = ctk.CTkImage(
+    light_image=github_original,
+    dark_image=github_original,
+    size=(desired_width, new_height)
+)
 
-# --- TELA "SETTINGS" ---
-frame_settings = ctk.CTkFrame(container, fg_color="#000000")
-
-settings_title = ctk.CTkLabel(frame_settings, text="Configurações", font=("Arial", 20, "bold"), text_color="white")
-settings_title.pack(pady=(20, 10))
-
-# Seletor de diretório (Ainda não funcional)
-directory_frame = ctk.CTkFrame(frame_settings, fg_color="#000000")
-directory_frame.pack(pady=10)
-
-directory_button = ctk.CTkButton(directory_frame, text="Selecionar Diretório", width=200, fg_color="#333", hover_color="#555")
-directory_button.pack(side="left", padx=5)
-
-directory_label = ctk.CTkLabel(directory_frame, text="Nenhum diretório selecionado", text_color="white", font=("Arial", 14))
-directory_label.pack(side="left")
-
-# Checkbox para "Formatar nomes automaticamente"
-auto_format_var = ctk.StringVar(value="off")
-auto_format_checkbox = ctk.CTkCheckBox(frame_settings, text="Formatar nomes automaticamente", variable=auto_format_var, onvalue="on", offvalue="off")
-auto_format_checkbox.pack(pady=10)
+github_button = ctk.CTkLabel(
+    about_wrapper,
+    image=github_image,
+    text="",
+    cursor="hand2"
+)
+github_button.pack(pady=(10, 20))
+github_button.bind("<Button-1>", open_github_link)
 
 # Função para atualizar a aparência dos botões
 def update_buttons(active_button):
@@ -314,6 +362,63 @@ def hide_frames():
     frame_download.pack_forget()
     frame_about.pack_forget()
     frame_settings.pack_forget()
+
+# --- TELA "SETTINGS" ---
+frame_settings = ctk.CTkFrame(container, fg_color="#000000")
+
+# Wrapper centralizado para Settings
+settings_wrapper = ctk.CTkFrame(frame_settings, fg_color="#000000")
+settings_wrapper.pack(expand=True)
+
+settings_title = ctk.CTkLabel(settings_wrapper, text="Configurações", font=title_font, text_color="white")
+settings_title.pack(pady=(20, 10))
+
+directory_frame = ctk.CTkFrame(settings_wrapper, fg_color="#000000")
+directory_frame.pack(pady=10)
+
+directory_button = ctk.CTkButton(directory_frame, 
+                               text="Selecionar Diretório", 
+                               width=200, 
+                               fg_color="#333", 
+                               hover_color="#555", 
+                               font=text_font)
+directory_button.pack(side="left", padx=5)
+
+directory_label = ctk.CTkLabel(directory_frame, 
+                             text="Nenhum diretório selecionado", 
+                             text_color="white", 
+                             font=text_font)
+directory_label.pack(side="left")
+
+auto_format_var = ctk.StringVar(value="off")
+auto_format_checkbox = ctk.CTkCheckBox(settings_wrapper, 
+                                     text="Formatar nomes automaticamente", 
+                                     variable=auto_format_var, 
+                                     onvalue="on", 
+                                     offvalue="off", 
+                                     font=text_font)
+auto_format_checkbox.pack(pady=10)
+
+# Funções de navegação
+def hide_frames():
+    frame_download.pack_forget()
+    frame_about.pack_forget()
+    frame_settings.pack_forget()
+
+def show_download():
+    hide_frames()
+    frame_download.pack(expand=True, fill="both")
+    update_buttons("download")
+
+def show_about():
+    hide_frames()
+    frame_about.pack(expand=True, fill="both")
+    update_buttons("about")
+
+def show_settings():
+    hide_frames()
+    frame_settings.pack(expand=True, fill="both")
+    update_buttons("settings")
 
 # Tela inicial
 show_download()
