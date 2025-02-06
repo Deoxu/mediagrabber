@@ -2,6 +2,8 @@ import customtkinter as ctk
 import webbrowser
 from PIL import Image
 import os
+import win32gui
+import win32con
 
 # Definir o caminho para a pasta images (coloque isso logo após os imports)
 import os
@@ -11,6 +13,25 @@ images_dir = os.path.join(current_dir, "images")
 # Definir o caminho para as fontes de forma mais explícita
 fonts_dir = os.path.join(current_dir, "fonts")
 
+# Antes das configurações da interface
+def create_icon():
+    try:
+        # Verifica se o ícone já existe
+        if not os.path.exists("images/icon.ico"):
+            # Abre a imagem do logo
+            img = Image.open("images/logo.png")
+            # Redimensiona para um tamanho adequado para ícone (32x32 é comum)
+            icon_size = (32, 32)
+            img = img.resize(icon_size, Image.Resampling.LANCZOS)
+            # Salva como ícone
+            img.save("images/icon.ico")
+            print("Ícone criado com sucesso!")
+    except Exception as e:
+        print(f"Erro ao criar ícone: {e}")
+
+# Criar o ícone antes de iniciar a interface
+create_icon()
+
 # Configurações da interface
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
@@ -19,8 +40,57 @@ app = ctk.CTk()
 app.title("Media Grabber")
 app.geometry("800x500")
 app.resizable(False, False)
-app._set_appearance_mode("dark")  # Garantir modo escuro
-app.configure(fg_color="#000000")  # Configurar cor de fundo da janela principal para preto
+app._set_appearance_mode("dark")
+app.configure(fg_color="#000000")
+app.overrideredirect(True)
+
+# Força a janela a aparecer na barra de tarefas e em primeiro plano
+def force_taskbar_and_focus():
+    # Força aparecer na barra de tarefas
+    hwnd = win32gui.GetParent(app.winfo_id())
+    style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+    style = style & ~win32con.WS_EX_TOOLWINDOW
+    style = style | win32con.WS_EX_APPWINDOW
+    win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, style)
+    
+    # Força foco e primeiro plano
+    app.lift()  # Traz a janela para frente
+    app.focus_force()  # Força o foco para a janela
+    app.attributes('-topmost', True)  # Mantém no topo
+    app.attributes('-topmost', False)  # Permite que outras janelas fiquem por cima depois
+
+app.after(10, force_taskbar_and_focus)
+
+# Funções para mover a janela principal
+def start_move(event):
+    app.x = event.x
+    app.y = event.y
+
+def on_move(event):
+    deltax = event.x - app.x
+    deltay = event.y - app.y
+    x = app.winfo_x() + deltax
+    y = app.winfo_y() + deltay
+    app.geometry(f"+{x}+{y}")
+
+# Frame superior para o botão de fechar
+top_frame = ctk.CTkFrame(app, fg_color="#101010", height=40)
+top_frame.pack(fill="x", pady=0)
+top_frame.pack_propagate(False)
+
+# Botão de fechar
+close_button = ctk.CTkButton(top_frame, 
+                            text="✕", 
+                            width=40,
+                            height=40,
+                            fg_color="#101010",
+                            hover_color="#333333",
+                            command=app.quit)
+close_button.pack(side="right")
+
+# Adicionar eventos de arrastar no frame superior
+top_frame.bind("<Button-1>", start_move)
+top_frame.bind("<B1-Motion>", on_move)
 
 # Cores para os botões
 DEFAULT_FG = "#333"
@@ -455,5 +525,89 @@ def show_settings():
 
 # Tela inicial
 show_download()
+
+class DownloadPreviewWindow:
+    def __init__(self):
+        self.window = ctk.CTkToplevel()
+        self.window.title("Download Preview")
+        self.window.geometry("300x500")
+        self.window.resizable(False, False)
+        self.window.configure(fg_color="#000000")
+        self.window.overrideredirect(True)
+        
+        # Frame principal que conterá todos os elementos
+        self.main_frame = ctk.CTkFrame(self.window, fg_color="#000000")
+        self.main_frame.pack(expand=True, fill="both")
+
+        # Título
+        self.title = ctk.CTkLabel(self.main_frame, 
+                                text="Download Preview", 
+                                font=("Roboto Bold", 16),
+                                text_color="white")
+        self.title.pack(pady=(20, 10))
+
+        # Frame para a imagem de preview
+        self.image_frame = ctk.CTkFrame(self.main_frame, 
+                                      width=260, 
+                                      height=146,  # Proporção 16:9
+                                      fg_color="#333333")
+        self.image_frame.pack(pady=10, padx=20)
+        self.image_frame.pack_propagate(False)
+
+        # Label placeholder para a imagem
+        self.preview_placeholder = ctk.CTkLabel(self.image_frame, 
+                                              text="Preview Image", 
+                                              font=text_font,
+                                              text_color="gray")
+        self.preview_placeholder.pack(expand=True)
+
+        # Nome do vídeo
+        self.video_name = ctk.CTkLabel(self.main_frame, 
+                                     text="Nome do vídeo aparecerá aqui...", 
+                                     font=text_font,
+                                     text_color="white",
+                                     wraplength=260)
+        self.video_name.pack(pady=10, padx=20)
+
+        # Barra de progresso
+        self.progress_bar = ctk.CTkProgressBar(self.main_frame, 
+                                             width=260,
+                                             height=10,
+                                             corner_radius=5)
+        self.progress_bar.pack(pady=(10, 5), padx=20)
+        self.progress_bar.set(0)
+
+        # Label para mostrar a porcentagem
+        self.progress_label = ctk.CTkLabel(self.main_frame, 
+                                         text="0%", 
+                                         font=text_font,
+                                         text_color="white")
+        self.progress_label.pack(pady=(0, 20))
+
+        # Adicionar eventos de arrastar para todos os elementos
+        for widget in [self.main_frame, self.title, self.image_frame, 
+                      self.preview_placeholder, self.video_name, 
+                      self.progress_label]:
+            widget.bind("<Button-1>", self.start_move)
+            widget.bind("<B1-Motion>", self.on_move)
+
+        # Posicionar a janela ao lado da janela principal com mais espaço
+        x = app.winfo_x() + app.winfo_width() + 50  # 50 pixels de espaço
+        y = app.winfo_y()  # Mesmo Y para alinhar no topo
+        self.window.geometry(f"+{x}+{y}")
+
+    def start_move(self, event):
+        self.x = event.x
+        self.y = event.y
+
+    def on_move(self, event):
+        deltax = event.x - self.x
+        deltay = event.y - self.y
+        x = self.window.winfo_x() + deltax
+        y = self.window.winfo_y() + deltay
+        self.window.geometry(f"+{x}+{y}")
+
+# Criar a janela de preview quando o programa iniciar
+preview_window = DownloadPreviewWindow()
 
 app.mainloop()
