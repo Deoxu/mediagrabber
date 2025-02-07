@@ -10,9 +10,6 @@ import os
 current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 images_dir = os.path.join(current_dir, "images")
 
-# Definir o caminho para as fontes de forma mais explícita
-fonts_dir = os.path.join(current_dir, "fonts")
-
 # Antes das configurações da interface
 def create_icon():
     try:
@@ -88,44 +85,23 @@ close_button = ctk.CTkButton(top_frame,
                             command=app.quit)
 close_button.pack(side="right")
 
-# Adicionar eventos de arrastar no frame superior
-top_frame.bind("<Button-1>", start_move)
-top_frame.bind("<B1-Motion>", on_move)
+# Adicionar eventos de arrastar na barra superior
+top_frame.bind('<Button-1>', start_move)
+top_frame.bind('<B1-Motion>', on_move)
 
 # Cores para os botões
 DEFAULT_FG = "#333"
 ACTIVE_FG = "white"
 DEFAULT_HOVER = "#555"
 
-# Criar fontes personalizadas com caminhos absolutos
-roboto_regular = os.path.join(fonts_dir, "Roboto-Regular.ttf")
-roboto_bold = os.path.join(fonts_dir, "Roboto-Bold.ttf")
-roboto_light = os.path.join(fonts_dir, "Roboto-Light.ttf")
+# Definir tamanhos de fonte sem especificar a família
+small_font = (None, 10)  # Para textos pequenos como os da barra lateral
+title_font = (None, 20)  # Para títulos
+text_font = (None, 14)   # Para texto geral
+emoji_font = ("Arial", 20)  # Mantendo Arial apenas para emojis
 
-# Registrar as fontes no sistema
-from tkinter import font
-import tkinter as tk
-
-def load_custom_font(font_path, family_name):
-    try:
-        tk.font.families()  # Inicializa o sistema de fontes
-        custom_font = tk.font.Font(font=font_path)
-        print(f"Fonte carregada: {font_path}")
-        return True
-    except Exception as e:
-        print(f"Erro ao carregar fonte {font_path}: {e}")
-        return False
-
-# Tentar carregar cada fonte
-load_custom_font(roboto_regular, "Roboto")
-load_custom_font(roboto_bold, "Roboto Bold")
-load_custom_font(roboto_light, "Roboto Light")
-
-# Definir as fontes após o carregamento
-emoji_font = ("Arial", 20)  # Mantendo Arial para emojis
-small_font = ("Roboto Light", 10)  # Para textos pequenos como os da barra lateral
-title_font = ("Roboto Bold", 20)   # Para títulos
-text_font = ("Roboto", 14)         # Para texto geral
+# Manter apenas a fonte para emojis
+emoji_font = ("Arial", 20)
 
 # --- FRAME LATERAL ---
 side_frame = ctk.CTkFrame(app, width=100, height=500, fg_color="#101010")
@@ -168,17 +144,16 @@ download_frame.pack_propagate(False)
 
 download_emoji = ctk.CTkLabel(download_frame, text="⬇", font=emoji_font)
 download_emoji.pack(pady=(5, 0))
-download_text = ctk.CTkLabel(download_frame, text="Save", font=small_font)
+download_text = ctk.CTkLabel(download_frame, text="Save", font=small_font, text_color="white")
 download_text.pack(pady=(0, 5))
 
 # Frame para o botão About
 about_frame = ctk.CTkFrame(bottom_frame, width=80, height=50, fg_color=DEFAULT_FG, corner_radius=0)
 about_frame.pack(fill="x")
-about_frame.pack_propagate(False)
 
 about_emoji = ctk.CTkLabel(about_frame, text="ℹ", font=emoji_font)
 about_emoji.pack(pady=(5, 0))
-about_text = ctk.CTkLabel(about_frame, text="About", font=small_font)
+about_text = ctk.CTkLabel(about_frame, text="About", font=small_font, text_color="white")
 about_text.pack(pady=(0, 5))
 
 # Frame para o botão Settings
@@ -188,7 +163,7 @@ settings_frame.pack_propagate(False)
 
 settings_emoji = ctk.CTkLabel(settings_frame, text="⚙", font=emoji_font)
 settings_emoji.pack(pady=(5, 0))
-settings_text = ctk.CTkLabel(settings_frame, text="Settings", font=small_font)
+settings_text = ctk.CTkLabel(settings_frame, text="Settings", font=small_font, text_color="white")
 settings_text.pack(pady=(0, 5))
 
 # Função para simular hover nos frames
@@ -254,16 +229,71 @@ main_logo = ctk.CTkImage(
 main_logo_label = ctk.CTkLabel(wrapper, image=main_logo, text="")
 main_logo_label.pack(pady=20)
 
-# Campo de entrada
-link_entry = ctk.CTkEntry(wrapper, 
-                         placeholder_text="cole o link aqui", 
+# Frame para a entrada de texto e ícone da plataforma
+input_frame = ctk.CTkFrame(wrapper, fg_color="#000000")
+input_frame.pack(pady=10)
+
+# Mover a caixa de texto existente para o input_frame
+link_entry = ctk.CTkEntry(input_frame, 
+                         placeholder_text="paste the link here", 
                          width=400, 
                          fg_color="#000000",
                          text_color="white",
                          border_color="#333333",
                          placeholder_text_color="gray",
                          corner_radius=10)
-link_entry.pack(pady=10)
+link_entry.pack(side="left", padx=(0, 10))
+
+# Botão com ícone da plataforma
+platform_icon = ctk.CTkImage(
+    light_image=Image.open(os.path.join(images_dir, "youtube.png")),
+    dark_image=Image.open(os.path.join(images_dir, "youtube.png")),
+    size=(20, 20)
+)
+platform_button = ctk.CTkButton(
+    input_frame,
+    text="",
+    image=platform_icon,
+    width=40,
+    height=40,
+    fg_color="#101010",
+    hover_color="#333333"
+)
+platform_button.pack(side="left")
+
+def identify_platform(url):
+    """Identifica a plataforma baseada na URL"""
+    if not url:
+        return "youtube"  # ícone padrão
+    
+    url = url.lower()
+    if "youtube.com" in url or "youtu.be" in url:
+        return "youtube"
+    elif "facebook.com" in url or "fb.watch" in url:
+        return "facebook"
+    elif "tiktok.com" in url:
+        return "tiktok"
+    elif "twitch.tv" in url:
+        return "twitch"
+    elif "twitter.com" in url or "x.com" in url:
+        return "x"
+    return "youtube"  # fallback para youtube
+
+def update_platform_icon(event=None):
+    """Atualiza o ícone baseado no link atual"""
+    current_url = link_entry.get()
+    platform = identify_platform(current_url)
+    platform_icon_path = os.path.join(images_dir, f"{platform}.png")
+    platform_image = ctk.CTkImage(
+        light_image=Image.open(platform_icon_path),
+        dark_image=Image.open(platform_icon_path),
+        size=(20, 20)
+    )
+    platform_button.configure(image=platform_image)
+
+# Vincular a atualização do ícone aos eventos de digitação e colagem
+link_entry.bind('<KeyRelease>', update_platform_icon)
+link_entry.bind('<Control-v>', update_platform_icon)
 
 # Carregar e redimensionar os ícones dos botões
 icon_size = (20, 20)  # Tamanho desejado para os ícones
@@ -280,12 +310,6 @@ video_icon = ctk.CTkImage(
     size=icon_size
 )
 
-info_icon = ctk.CTkImage(
-    light_image=Image.open(os.path.join(images_dir, "info.png")),
-    dark_image=Image.open(os.path.join(images_dir, "info.png")),
-    size=icon_size
-)
-
 # Frame dos botões de opção
 format_frame = ctk.CTkFrame(wrapper, fg_color="#000000")
 format_frame.pack(pady=10)
@@ -295,7 +319,6 @@ audio_button = ctk.CTkButton(format_frame,
                            width=80, 
                            fg_color="#333", 
                            hover_color="#555",
-                           font=("Roboto Bold", 14),
                            image=audio_icon,
                            compound="left")
 
@@ -304,22 +327,12 @@ video_button = ctk.CTkButton(format_frame,
                            width=80, 
                            fg_color="#333", 
                            hover_color="#555",
-                           font=("Roboto Bold", 14),
                            image=video_icon,
                            compound="left")
 
-info_button = ctk.CTkButton(format_frame, 
-                          text="info", 
-                          width=80, 
-                          fg_color="#333", 
-                          hover_color="#555",
-                          font=("Roboto Bold", 14),
-                          image=info_icon,
-                          compound="left")
-
-audio_button.grid(row=0, column=2, padx=5)
-video_button.grid(row=0, column=1, padx=5)
-info_button.grid(row=0, column=0, padx=5)
+# Ajustar posicionamento dos botões após remover o info
+video_button.grid(row=0, column=0, padx=5)
+audio_button.grid(row=0, column=1, padx=5)
 
 # --- TELA "ABOUT" ---
 frame_about = ctk.CTkFrame(container, fg_color="#000000")
@@ -331,7 +344,7 @@ about_wrapper.pack(expand=True)
 # Título e imagem das aplicações suportadas
 supported_title = ctk.CTkLabel(about_wrapper, 
                              text="Aplicações suportadas", 
-                             font=title_font,  # Voltando para o tamanho maior
+                             font=title_font,
                              text_color="white")
 supported_title.pack(pady=(10, 0))
 
@@ -365,7 +378,6 @@ disclaimer_text = ("A funcionalidade de salvamento simplifica o download de cont
 
 disclaimer_label = ctk.CTkLabel(about_wrapper, 
                               text=disclaimer_text, 
-                              font=("Roboto Bold", 14),  # Mantendo tamanho normal com negrito
                               text_color="white", 
                               justify="left", 
                               wraplength=600)
@@ -542,7 +554,7 @@ class DownloadPreviewWindow:
         # Título
         self.title = ctk.CTkLabel(self.main_frame, 
                                 text="Download Preview", 
-                                font=("Roboto Bold", 16),
+                                font=title_font,
                                 text_color="white")
         self.title.pack(pady=(20, 10))
 
@@ -557,7 +569,7 @@ class DownloadPreviewWindow:
         # Label placeholder para a imagem
         self.preview_placeholder = ctk.CTkLabel(self.image_frame, 
                                               text="Preview Image", 
-                                              font=text_font,
+                                              font=emoji_font,
                                               text_color="gray")
         self.preview_placeholder.pack(expand=True)
 
@@ -609,5 +621,30 @@ class DownloadPreviewWindow:
 
 # Criar a janela de preview quando o programa iniciar
 preview_window = DownloadPreviewWindow()
+
+# Atualizar todos os elementos de texto com as fontes apropriadas
+
+supported_title.configure(font=title_font)
+settings_title.configure(font=title_font)
+
+
+download_text.configure(font=small_font, text_color="white")
+about_text.configure(font=small_font, text_color="white")
+settings_text.configure(font=small_font, text_color="white")
+
+link_entry.configure(font=text_font, text_color="white")
+about_label.configure(font=text_font, text_color="white")
+directory_label.configure(font=text_font, text_color="white")
+disclaimer_label.configure(font=text_font, text_color="white")
+
+
+audio_button.configure(font=text_font, text_color="white")
+video_button.configure(font=text_font, text_color="white")
+close_button.configure(font=text_font, text_color="white")
+
+# Manter fonte apenas para emojis
+download_emoji.configure(font=emoji_font)
+about_emoji.configure(font=emoji_font)
+settings_emoji.configure(font=emoji_font)
 
 app.mainloop()
