@@ -4,6 +4,8 @@ from PIL import Image
 import os
 import win32gui
 import win32con
+import configparser
+from tkinter import filedialog
 
 # Definir o caminho para a pasta images (coloque isso logo após os imports)
 import os
@@ -246,8 +248,8 @@ link_entry.pack(side="left", padx=(0, 10))
 
 # Botão com ícone da plataforma
 platform_icon = ctk.CTkImage(
-    light_image=Image.open(os.path.join(images_dir, "youtube.png")),
-    dark_image=Image.open(os.path.join(images_dir, "youtube.png")),
+    light_image=Image.open(os.path.join(images_dir, "questionmark.png")),
+    dark_image=Image.open(os.path.join(images_dir, "questionmark.png")),
     size=(20, 20)
 )
 platform_button = ctk.CTkButton(
@@ -261,10 +263,57 @@ platform_button = ctk.CTkButton(
 )
 platform_button.pack(side="left")
 
+# Frame para o tooltip (criar como filho da janela principal)
+tooltip_frame = ctk.CTkFrame(app, fg_color="#101010", corner_radius=10)
+
+# Adicionar o texto de volta
+tooltip_label = ctk.CTkLabel(tooltip_frame, 
+                           text="Aplicações suportadas:",
+                           text_color="white",
+                           justify="left")
+tooltip_label.pack(padx=10, pady=(5, 0))  # Padding maior em cima
+
+# Frame para organizar os ícones horizontalmente
+icons_frame = ctk.CTkFrame(tooltip_frame, fg_color="#101010")
+icons_frame.pack(padx=10, pady=5)
+
+# Criar e adicionar os ícones das plataformas
+platforms = ["youtube", "facebook", "tiktok", "twitch", "x"]
+platform_icons = []
+
+for i, platform in enumerate(platforms):
+    icon = ctk.CTkImage(
+        light_image=Image.open(os.path.join(images_dir, f"{platform}.png")),
+        dark_image=Image.open(os.path.join(images_dir, f"{platform}.png")),
+        size=(20, 20)
+    )
+    icon_label = ctk.CTkLabel(icons_frame, image=icon, text="")
+    icon_label.pack(side="left", padx=5)
+    platform_icons.append(icon)  # Manter referência aos ícones
+
+def show_tooltip(event):
+    # Calcular posição absoluta do botão
+    x = platform_button.winfo_rootx() - platform_button.winfo_width() - 230  # Ajustado 10 pixels para direita (240 - 10)
+    y = format_frame.winfo_rooty() + format_frame.winfo_height() + 40  # Ajustado 20 pixels para cima (60 - 20)
+    
+    # Posicionar tooltip usando coordenadas absolutas
+    tooltip_frame.lift()  # Garante que o tooltip fique visível
+    tooltip_frame.place(x=x - app.winfo_rootx(), y=y - app.winfo_rooty())
+
+def hide_tooltip(event):
+    tooltip_frame.place_forget()
+
+# Adicionar eventos de hover ao botão de plataforma
+platform_button.bind('<Enter>', show_tooltip)
+platform_button.bind('<Leave>', hide_tooltip)
+
+# Esconder o tooltip inicialmente
+tooltip_frame.place_forget()
+
 def identify_platform(url):
     """Identifica a plataforma baseada na URL"""
     if not url:
-        return "youtube"  # ícone padrão
+        return "questionmark"  # Ícone padrão quando não há link
     
     url = url.lower()
     if "youtube.com" in url or "youtu.be" in url:
@@ -277,7 +326,7 @@ def identify_platform(url):
         return "twitch"
     elif "twitter.com" in url or "x.com" in url:
         return "x"
-    return "youtube"  # fallback para youtube
+    return "questionmark"  # Também usar quando o link não corresponde a nenhuma plataforma
 
 def update_platform_icon(event=None):
     """Atualiza o ícone baseado no link atual"""
@@ -493,7 +542,7 @@ directory_frame.pack(pady=10)
 
 directory_button = ctk.CTkButton(directory_frame, 
                                text="Selecionar Diretório", 
-                               width=200, 
+                               width=150, 
                                fg_color="#333", 
                                hover_color="#555", 
                                font=text_font)
@@ -538,17 +587,27 @@ def show_settings():
 # Tela inicial
 show_download()
 
-class DownloadPreviewWindow:
-    def __init__(self):
-        self.window = ctk.CTkToplevel()
-        self.window.title("Download Preview")
-        self.window.geometry("300x500")
-        self.window.resizable(False, False)
-        self.window.configure(fg_color="#000000")
-        self.window.overrideredirect(True)
+def keep_preview_on_top(event=None):
+    # Verifica se a janela de preview existe e está visível
+    if hasattr(app, 'preview_window') and app.preview_window.winfo_exists():
+        app.preview_window.lift()  # Apenas traz a janela para frente sem forçar foco
+
+# Vincular o evento de foco à janela principal
+app.bind('<FocusIn>', keep_preview_on_top)
+
+# Atualizar a classe DownloadPreviewWindow para armazenar a referência
+class DownloadPreviewWindow(ctk.CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        app.preview_window = self  # Armazena a referência na janela principal
+        self.title("Download Preview")
+        self.geometry("300x500")
+        self.resizable(False, False)
+        self.configure(fg_color="#000000")
+        self.overrideredirect(True)
         
         # Frame principal que conterá todos os elementos
-        self.main_frame = ctk.CTkFrame(self.window, fg_color="#000000")
+        self.main_frame = ctk.CTkFrame(self, fg_color="#000000")
         self.main_frame.pack(expand=True, fill="both")
 
         # Título
@@ -585,9 +644,17 @@ class DownloadPreviewWindow:
         self.progress_bar = ctk.CTkProgressBar(self.main_frame, 
                                              width=260,
                                              height=10,
-                                             corner_radius=5)
+                                             corner_radius=5,
+                                             border_color="#333333",
+                                             border_width=1,
+                                             fg_color="#000000",
+                                             progress_color="#333333"
+                                             )
         self.progress_bar.pack(pady=(10, 5), padx=20)
         self.progress_bar.set(0)
+        self.progress_bar.pack(pady=10)
+
+
 
         # Label para mostrar a porcentagem
         self.progress_label = ctk.CTkLabel(self.main_frame, 
@@ -606,7 +673,7 @@ class DownloadPreviewWindow:
         # Posicionar a janela ao lado da janela principal com mais espaço
         x = app.winfo_x() + app.winfo_width() + 50  # 50 pixels de espaço
         y = app.winfo_y()  # Mesmo Y para alinhar no topo
-        self.window.geometry(f"+{x}+{y}")
+        self.geometry(f"+{x}+{y}")
 
     def start_move(self, event):
         self.x = event.x
@@ -615,9 +682,9 @@ class DownloadPreviewWindow:
     def on_move(self, event):
         deltax = event.x - self.x
         deltay = event.y - self.y
-        x = self.window.winfo_x() + deltax
-        y = self.window.winfo_y() + deltay
-        self.window.geometry(f"+{x}+{y}")
+        x = self.winfo_x() + deltax
+        y = self.winfo_y() + deltay
+        self.geometry(f"+{x}+{y}")
 
 # Criar a janela de preview quando o programa iniciar
 preview_window = DownloadPreviewWindow()
@@ -646,5 +713,31 @@ close_button.configure(font=text_font, text_color="white")
 download_emoji.configure(font=emoji_font)
 about_emoji.configure(font=emoji_font)
 settings_emoji.configure(font=emoji_font)
+
+def select_directory():
+    # Abrir diálogo para selecionar diretório
+    directory = filedialog.askdirectory()
+    if directory:
+        # Atualizar o diretório de download
+        global download_path
+        download_path = directory
+        
+        # Atualizar o texto do label com o novo diretório
+        directory_label.configure(text=f"Diretório Selecionado: {download_path}")
+        
+        # Salvar o novo diretório no arquivo de configuração
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        
+        if 'Settings' not in config:
+            config['Settings'] = {}
+            
+        config['Settings']['download_path'] = download_path
+        
+        with open('config.ini', 'w') as configfile:
+            config.write(configfile)
+
+# Vincular a função ao botão de diretório
+directory_button.configure(command=select_directory)
 
 app.mainloop()
