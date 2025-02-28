@@ -102,9 +102,6 @@ title_font = (None, 20)  # Para títulos
 text_font = (None, 14)   # Para texto geral
 emoji_font = ("Arial", 20)  # Mantendo Arial apenas para emojis
 
-# Manter apenas a fonte para emojis
-emoji_font = ("Arial", 20)
-
 # --- FRAME LATERAL ---
 side_frame = ctk.CTkFrame(app, width=100, height=500, fg_color="#101010")
 side_frame.pack(side="left", fill="y")
@@ -152,6 +149,7 @@ download_text.pack(pady=(0, 5))
 # Frame para o botão About
 about_frame = ctk.CTkFrame(bottom_frame, width=80, height=50, fg_color=DEFAULT_FG, corner_radius=0)
 about_frame.pack(fill="x")
+about_frame.pack_propagate(False)
 
 about_emoji = ctk.CTkLabel(about_frame, text="ℹ", font=emoji_font)
 about_emoji.pack(pady=(5, 0))
@@ -644,17 +642,9 @@ class DownloadPreviewWindow(ctk.CTkToplevel):
         self.progress_bar = ctk.CTkProgressBar(self.main_frame, 
                                              width=260,
                                              height=10,
-                                             corner_radius=5,
-                                             border_color="#333333",
-                                             border_width=1,
-                                             fg_color="#000000",
-                                             progress_color="#333333"
-                                             )
+                                             corner_radius=5)
         self.progress_bar.pack(pady=(10, 5), padx=20)
         self.progress_bar.set(0)
-        self.progress_bar.pack(pady=10)
-
-
 
         # Label para mostrar a porcentagem
         self.progress_label = ctk.CTkLabel(self.main_frame, 
